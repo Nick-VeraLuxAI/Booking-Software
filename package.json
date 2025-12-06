@@ -1,0 +1,14 @@
+{
+  "name": "booking-service",
+  "version": "1.0.0",
+  "description": "Minimal booking service with stubs for payments and reminders",
+  "main": "services/client-service.js",
+  "scripts": {
+    "start": "node services/client-service.js",
+    "start:client": "node services/client-service.js",
+    "start:employee": "node services/employee-service.js",
+    "start:all": "node services/client-service.js & node services/employee-service.js",
+    "test": "npm run lint --if-present && npm run typecheck --if-present"
+  },
+  "license": "MIT"
+}

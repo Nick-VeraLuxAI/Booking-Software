@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Studio</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="background-ambient"></div>
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Booking Studio</div>
+      <h1>Book a time that works for you</h1>
+      <p class="lede">Pick your service, date, and time. Payments, reminders, and wallet passes are ready for you to wire up.</p>
+      <div class="role-toggle">
+        <span class="helper">Role:</span>
+        <div class="role-buttons">
+          <button type="button" class="ghost" id="role-client">Client view</button>
+          <button type="button" class="ghost" id="role-employee">Employee view</button>
+        </div>
+        <span class="helper small-helper">Employee unlocks editing and management panels.</span>
+      </div>
+      <div class="auth-forms">
+        <form id="client-login" class="auth-form">
+          <div class="helper">Client login</div>
+          <input type="email" name="email" placeholder="client@example.com" required>
+          <input type="password" name="password" placeholder="Password" required>
+          <button type="submit" class="ghost">Sign in as client</button>
+        </form>
+        <form id="employee-login" class="auth-form">
+          <div class="helper">Employee login</div>
+          <input type="email" name="email" placeholder="owner@example.com" required>
+          <input type="password" name="password" placeholder="Password" required>
+          <button type="submit" class="ghost">Sign in as employee</button>
+        </form>
+        <button type="button" class="ghost" id="logout-btn">Sign out</button>
+      </div>
+    </div>
+    <div class="hero-badge">
+      <div class="badge-title">Fast setup</div>
+      <div class="badge-sub">Local JSON + stubs for Stripe, SMS, email, and wallets.</div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="eyebrow">Schedule</div>
+          <h2>Client booking flow</h2>
+        </div>
+        <div class="helper">Each step opens its own window: service → barber → time → details.</div>
+      </div>
+
+      <div id="step-service" class="window">
+        <div class="step-title">Step 1 — Pick a service</div>
+        <select id="service" name="service" required></select>
+        <div class="actions">
+          <button type="button" class="primary" id="step1-next">Next: Barber</button>
+        </div>
+      </div>
+
+      <div id="step-barber" class="window hidden">
+        <div class="step-title">Step 2 — Pick a barber</div>
+        <select id="barber" name="barber" required></select>
+        <div class="actions">
+          <button type="button" class="ghost" id="step2-back">Back</button>
+          <button type="button" class="primary" id="step2-next">Next: Date & Time</button>
+        </div>
+      </div>
+
+      <div id="step-schedule" class="window hidden">
+        <div class="step-title">Step 3 — Pick a date & time</div>
+        <div class="step-grid">
+          <input type="date" id="date" name="date" required>
+          <select id="time" name="time" required>
+            <option value="">Pick date/service/barber</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button type="button" class="ghost" id="step3-back">Back</button>
+          <button type="button" class="primary" id="step3-next">Next: Client info</button>
+        </div>
+      </div>
+
+      <div id="step-details" class="window hidden">
+        <div class="step-title">Step 4 — Enter client info</div>
+        <form id="booking-form" class="form-grid">
+          <label>
+            <span>First name</span>
+            <input type="text" id="firstName" name="firstName" placeholder="Jordan" required>
+          </label>
+          <label>
+            <span>Last name</span>
+            <input type="text" id="lastName" name="lastName" placeholder="Booker" required>
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required>
+          </label>
+          <label>
+            <span>Phone (optional)</span>
+            <input type="tel" id="phone" name="phone" placeholder="(555) 123-4567">
+          </label>
+          <label class="wide">
+            <span>Notes (optional)</span>
+            <textarea id="notes" name="notes" rows="3" placeholder="Anything we should know?"></textarea>
+          </label>
+          <div class="actions">
+            <button type="button" class="ghost" id="step4-back">Back</button>
+            <button type="submit" class="primary">Book appointment</button>
+            <div class="inline-note">Creates the client profile and books the slot.</div>
+          </div>
+        </form>
+      </div>
+
+      <div id="status" class="status hidden"></div>
+      <div id="confirmation" class="confirmation hidden"></div>
+    </section>
+
+    <section class="panel secondary">
+      <div class="panel-header">
+        <div>
+          <div class="eyebrow">Services</div>
+          <h2>What we offer</h2>
+        </div>
+        <div class="helper">Adjust this list in <code>server.js</code>.</div>
+      </div>
+      <div id="service-grid" class="service-grid"></div>
+
+      <div class="panel-header compact">
+        <div>
+          <div class="eyebrow">Live data</div>
+          <h3>Recent bookings</h3>
+        </div>
+        <button class="ghost" id="refresh-bookings" type="button">Refresh</button>
+      </div>
+      <div id="booking-list" class="booking-list"></div>
+    </section>
+  </main>
+
+  <section class="panel schedule">
+    <div class="panel-header">
+      <div>
+        <div class="eyebrow">Calendar</div>
+        <h2>Visual schedule for clients and barbers</h2>
+      </div>
+      <div class="helper">Click a day to see bookings; navigate months as needed.</div>
+    </div>
+    <div class="schedule-grid">
+      <div class="schedule-column" id="client-schedule-col">
+        <div class="calendar-header">
+          <div>
+            <h3>Client view</h3>
+            <div class="helper">Shows bookings; pulls availability for a day.</div>
+          </div>
+          <div class="month-nav">
+            <button class="ghost" id="client-month-prev" type="button">‹</button>
+            <div id="client-month-label" class="month-label"></div>
+            <button class="ghost" id="client-month-next" type="button">›</button>
+          </div>
+        </div>
+        <div class="calendar-grid" id="client-calendar"></div>
+      </div>
+      <div class="schedule-column" id="barber-schedule-col">
+        <div class="calendar-header">
+          <div>
+            <h3>Barber view</h3>
+            <div class="helper">Manage appointments at a glance.</div>
+          </div>
+          <div class="month-nav">
+            <button class="ghost" id="barber-month-prev" type="button">‹</button>
+            <div id="barber-month-label" class="month-label"></div>
+            <button class="ghost" id="barber-month-next" type="button">›</button>
+          </div>
+        </div>
+        <div class="calendar-grid" id="barber-calendar"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel settings" id="settings-panel">
+    <div class="panel-header">
+      <div>
+        <div class="eyebrow">Control center</div>
+        <h2>Edit services, clients, appointments, and theme</h2>
+      </div>
+      <div class="helper">Changes are stored in memory for now.</div>
+    </div>
+    <div class="settings-grid">
+      <div class="settings-block">
+        <div class="settings-heading">
+          <h3>Services</h3>
+          <span class="helper">Edit or remove existing services.</span>
+        </div>
+        <div id="admin-services"></div>
+        <hr>
+        <h4>Add a service</h4>
+        <form id="add-service-form" class="mini-form">
+          <input type="text" name="id" placeholder="id (e.g. nails)" required>
+          <input type="text" name="name" placeholder="Name" required>
+          <input type="number" name="durationMinutes" placeholder="Duration (min)" required>
+          <input type="number" name="price" placeholder="Price" required>
+          <input type="text" name="description" placeholder="Description">
+          <button type="submit" class="primary small">Add service</button>
+        </form>
+      </div>
+      <div class="settings-block">
+        <div class="settings-heading">
+          <h3>Clients</h3>
+          <span class="helper">Edit saved client info.</span>
+        </div>
+        <div id="admin-clients"></div>
+      </div>
+      <div class="settings-block">
+        <div class="settings-heading">
+          <h3>Appointments</h3>
+          <span class="helper">Reschedule or remove bookings.</span>
+        </div>
+        <div id="admin-bookings"></div>
+      </div>
+      <div class="settings-block">
+        <div class="settings-heading">
+          <h3>Theme</h3>
+          <span class="helper">Adjust accent colors and borders.</span>
+        </div>
+        <form id="theme-form" class="mini-form">
+          <label>Accent <input type="color" name="accent"></label>
+          <label>Accent 2 <input type="color" name="accent2"></label>
+          <label>Ink <input type="color" name="ink"></label>
+          <label>Card <input type="color" name="card"></label>
+          <label>Line <input type="color" name="line"></label>
+          <button type="submit" class="primary small">Save theme</button>
+        </form>
+      </div>
+
+      <div class="settings-block owner-only hidden" id="owner-settings">
+        <div class="settings-heading">
+          <h3>Owner settings</h3>
+          <span class="helper">Stripe hooks (owner only).</span>
+        </div>
+        <form id="stripe-form" class="mini-form">
+          <input type="text" name="publishableKey" placeholder="Stripe publishable key (pk_...)" autocomplete="off">
+          <input type="text" name="secretKey" placeholder="Stripe secret key (sk_...)" autocomplete="off">
+          <input type="text" name="webhookSecret" placeholder="Webhook signing secret (whsec_...)" autocomplete="off">
+          <input type="url" name="successUrl" placeholder="Success URL (https://...)" autocomplete="off">
+          <input type="url" name="cancelUrl" placeholder="Cancel URL (https://...)" autocomplete="off">
+          <button type="submit" class="primary small">Save Stripe settings</button>
+          <div class="inline-note">Hook these up to create PaymentIntents and verify webhooks server-side.</div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <script src="/app.js"></script>
+
+  <div id="modal" class="modal hidden">
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <button id="modal-close" class="ghost close-btn" type="button">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+</body>
+</html>
